@@ -37,6 +37,7 @@ struct CommandLineArgs {
 	int captureMode = 1;
 	std::wstring outputPath;
 	bool isValid = false;
+	bool pidProvided = false;
 	std::wstring errorMessage;
 };
 
@@ -57,26 +58,20 @@ CommandLineArgs ParseCommandLine(int argc, wchar_t* argv[]) {
 	}
 
 	if (!hasOptionArgs) {
-		if (argc != 3) {
-			args.errorMessage = L"Error: Invalid positional arguments. Expected: <PID> <PATH>.";
+		if (argc != 2) {
+			args.errorMessage = L"Error: Invalid positional arguments. Expected: <PATH>.";
 			return args;
 		}
 
-		wchar_t* endPtr;
-		args.processId = std::wcstoul(argv[1], &endPtr, 10);
-		if (endPtr == argv[1] || *endPtr != L'\0' || args.processId == 0) {
-			args.errorMessage = L"Error: Invalid process ID: " + std::wstring(argv[1]) +
-				L"\nMust be a positive integer.";
-			return args;
-		}
-
-		args.outputPath = argv[2];
+		args.outputPath = argv[1];
 		if (args.outputPath.empty()) {
 			args.errorMessage = L"Error: Output path cannot be empty.";
 			return args;
 		}
 
 		args.captureMode = 2;
+		args.processId = GetCurrentProcessId();
+		args.pidProvided = false;
 		args.isValid = true;
 		return args;
 	}
@@ -123,14 +118,21 @@ CommandLineArgs ParseCommandLine(int argc, wchar_t* argv[]) {
 
 	if (args.captureMode == 1 || args.captureMode == 2) {
 		if (params.find(L"pid") == params.end()) {
-			args.errorMessage = L"Error: Missing required argument --pid for mode 1 or 2.";
-			return args;
+			if (args.captureMode == 1) {
+				args.errorMessage = L"Error: Missing required argument --pid for mode 1.";
+				return args;
+			}
+			args.processId = GetCurrentProcessId();
+			args.pidProvided = false;
 		}
-		args.processId = std::wcstoul(params[L"pid"].c_str(), &endPtr, 10);
-		if (endPtr == params[L"pid"].c_str() || *endPtr != L'\0' || args.processId == 0) {
-			args.errorMessage = L"Error: Invalid process ID: " + params[L"pid"] +
-				L"\nMust be a positive integer.";
-			return args;
+		else {
+			args.processId = std::wcstoul(params[L"pid"].c_str(), &endPtr, 10);
+			if (endPtr == params[L"pid"].c_str() || *endPtr != L'\0' || args.processId == 0) {
+				args.errorMessage = L"Error: Invalid process ID: " + params[L"pid"] +
+					L"\nMust be a positive integer.";
+				return args;
+			}
+			args.pidProvided = true;
 		}
 	}
 
@@ -141,7 +143,7 @@ CommandLineArgs ParseCommandLine(int argc, wchar_t* argv[]) {
 void usage() {
 	std::wcout << L"Process Audio Recorder - Captures audio from processes or the entire system\n\n"
 		<< L"Usage: ProcessAudioRecorder [--pid <PID>] --mode <MODE> --path <FILEPATH>\n"
-		<< L"       ProcessAudioRecorder <PID> <FILEPATH>\n\n"
+		<< L"       ProcessAudioRecorder <FILEPATH>\n\n"
 		<< L"Options:\n"
 		<< L"  --pid <PID>    Target process ID (required for mode 1 and 2)\n"
 		<< L"  --mode <MODE>  Capture mode (required):\n"
@@ -153,7 +155,9 @@ void usage() {
 		<< L"  ProcessAudioRecorder --mode 0 --path C:\\system_audio.wav\n"
 		<< L"  ProcessAudioRecorder --pid 1234 --mode 1 --path C:\\record.wav\n"
 		<< L"  ProcessAudioRecorder --pid 5678 --path D:\\audio.wav\n"
-		<< L"  ProcessAudioRecorder 12345 D:\\audio.wav\n\n"
+		<< L"  ProcessAudioRecorder --mode 2 --path D:\\audio.wav\n"
+		<< L"  ProcessAudioRecorder --mode 2 --pid 12345 --path D:\\audio.wav\n"
+		<< L"  ProcessAudioRecorder D:\\audio.wav\n\n"
 		<< L"Exit conditions:\n"
 		<< L"  - Target process exits (for mode 1 and 2)\n"
 		<< L"  - User presses Ctrl+C\n";
@@ -210,6 +214,10 @@ int wmain(int argc, wchar_t* argv[]) {
 		hr = loopbackCapture.StartGlobalCaptureAsync(args.outputPath.c_str());
 	}
 	else {
+		if (args.captureMode == 2 && !args.pidProvided) {
+			std::wcout << L"No --pid provided for mode 2. Defaulting to exclude self (PID "
+				<< args.processId << L")." << std::endl;
+		}
 		if (!IsProcessRunning(args.processId)) {
 			std::wcout << L"Error: Process with ID " << args.processId << L" does not exist or cannot be accessed." << std::endl;
 			return 3;
