@@ -46,6 +46,40 @@ CommandLineArgs ParseCommandLine(int argc, wchar_t* argv[]) {
 		args.errorMessage = L"Error: Too few arguments.";
 		return args;
 	}
+
+	bool hasOptionArgs = false;
+	for (int i = 1; i < argc; i++) {
+		std::wstring arg = argv[i];
+		if (arg.rfind(L"--", 0) == 0) {
+			hasOptionArgs = true;
+			break;
+		}
+	}
+
+	if (!hasOptionArgs) {
+		if (argc != 3) {
+			args.errorMessage = L"Error: Invalid positional arguments. Expected: <PID> <PATH>.";
+			return args;
+		}
+
+		wchar_t* endPtr;
+		args.processId = std::wcstoul(argv[1], &endPtr, 10);
+		if (endPtr == argv[1] || *endPtr != L'\0' || args.processId == 0) {
+			args.errorMessage = L"Error: Invalid process ID: " + std::wstring(argv[1]) +
+				L"\nMust be a positive integer.";
+			return args;
+		}
+
+		args.outputPath = argv[2];
+		if (args.outputPath.empty()) {
+			args.errorMessage = L"Error: Output path cannot be empty.";
+			return args;
+		}
+
+		args.captureMode = 2;
+		args.isValid = true;
+		return args;
+	}
 	std::map<std::wstring, std::wstring> params;
 	for (int i = 1; i < argc; i++) {
 		std::wstring arg = argv[i];
@@ -106,7 +140,8 @@ CommandLineArgs ParseCommandLine(int argc, wchar_t* argv[]) {
 
 void usage() {
 	std::wcout << L"Process Audio Recorder - Captures audio from processes or the entire system\n\n"
-		<< L"Usage: ProcessAudioRecorder [--pid <PID>] --mode <MODE> --path <FILEPATH>\n\n"
+		<< L"Usage: ProcessAudioRecorder [--pid <PID>] --mode <MODE> --path <FILEPATH>\n"
+		<< L"       ProcessAudioRecorder <PID> <FILEPATH>\n\n"
 		<< L"Options:\n"
 		<< L"  --pid <PID>    Target process ID (required for mode 1 and 2)\n"
 		<< L"  --mode <MODE>  Capture mode (required):\n"
@@ -117,7 +152,8 @@ void usage() {
 		<< L"Examples:\n"
 		<< L"  ProcessAudioRecorder --mode 0 --path C:\\system_audio.wav\n"
 		<< L"  ProcessAudioRecorder --pid 1234 --mode 1 --path C:\\record.wav\n"
-		<< L"  ProcessAudioRecorder --pid 5678 --path D:\\audio.wav\n\n"
+		<< L"  ProcessAudioRecorder --pid 5678 --path D:\\audio.wav\n"
+		<< L"  ProcessAudioRecorder 12345 D:\\audio.wav\n\n"
 		<< L"Exit conditions:\n"
 		<< L"  - Target process exits (for mode 1 and 2)\n"
 		<< L"  - User presses Ctrl+C\n";
