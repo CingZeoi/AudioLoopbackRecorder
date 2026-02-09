@@ -68,7 +68,7 @@
 
 本程序通过以下三个命令行参数进行控制：
 
-*   `--pid <PID>`: 指定目标进程的 ID。此参数在模式 `1` 和 `2` 中为必需参数。
+*   `--pid <PID>`: 指定目标进程的 ID。此参数在模式 `1` 中为必需参数。模式 `2` 如果没提供 PID，将会排除自身 （把自己的 PID 输入进去）。
 *   `--mode <MODE>`: 设置录制模式。此参数必需。
     *   `0`: 全局环回模式
     *   `1`: 进程包含模式
@@ -99,6 +99,18 @@
 *   **命令**：
     ```shell
     ProcessAudioRecorder.exe --pid 9999 --mode 2 --path D:\meeting_audio.wav
+    ```
+
+**模式3增强模式：进程排除模式 （排除自身）**
+
+*   **场景**：您需要录制所有系统声音 （模式1），但录出来的音质很差，这时候就可尝试这种模式。
+*   **命令**：
+    ```shell
+    ProcessAudioRecorder.exe --mode 2 --path d:\Recording.wav    
+    ```
+也可以用简单写法：
+    ```shell
+    ProcessAudioRecorder.exe d:\Recording.wav
     ```
 
 ##### **2.2.4 停止录制**
