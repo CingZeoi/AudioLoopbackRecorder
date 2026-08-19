@@ -1,3 +1,5 @@
+
+
 [Deutsch](https://zdoc.app/de/CingZeoi/AudioLoopbackRecorder) | 
 [English](https://zdoc.app/en/CingZeoi/AudioLoopbackRecorder) | 
 [Español](https://zdoc.app/es/CingZeoi/AudioLoopbackRecorder) | 
@@ -111,7 +113,7 @@
 
 这会动态显示当前的已录制时长。
 
-需要停止录制时，请确保输入焦点停留于控制台窗口，然后按快捷键 `Ctrl + C`。程序会立刻响应，并优雅停止音频捕获工作，将所有缓冲数据写入文件，修复 WAV 文件头信息，然后自动退出。文件将完整地保存在您指定的路径。
+需要停止录制时，请确保输入焦点停留于控制台窗口，然后按快捷键 `Ctrl + C`。程序会立刻响应，并优雅停止音频捕获工作，将所有缓冲数据写入文件，修复 WAV 文件头信息，然后自动退出。文件将完整地保存在您指定的路径。在模式 `1` 或 `2` 下，如果目标进程退出，程序也会自动停止并保存文件。
 
 ---
 
